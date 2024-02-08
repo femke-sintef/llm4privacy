@@ -1,7 +1,7 @@
 import os
 from yaml import safe_load
 import openai
-from read_data import get_df_segments
+from read import get_df_segments
 from datetime import datetime
 import json
 from tqdm import tqdm
@@ -12,7 +12,7 @@ from copy import deepcopy
 
 def call_api(messages, engine):
     return openai.chat.completions.create(
-        model=engine, messages=messages, max_tokens=50
+        model=engine, messages=messages, max_tokens=500
     )
 
 
