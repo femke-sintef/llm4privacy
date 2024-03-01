@@ -53,7 +53,13 @@ if __name__ == "__main__":
     context = get_context(config["prompt_id"])
 
     # get df with segments to be queried
-    df_segments = get_df_segments(config["dataset_name"])
+    if not "remove_HTML" in config:
+        config["remove_HTML"] = False
+    df_segments = get_df_segments(
+        config["dataset_name"],
+        n_policies=config["n_policies"],
+        remove_html_tags=config["remove_HTML"],
+    )
     df_segments["prompt_id"] = config["prompt_id"]
     df_segments["engine"] = config["engine"]
     df_segments["dataset_name"] = config["dataset_name"]
@@ -82,5 +88,13 @@ if __name__ == "__main__":
     # save final results
     with open(os.path.join(result_path, "config.json"), "w") as f:
         json.dump(config, f)
-    df_segments.to_csv(os.path.join(result_path, "results.csv"))
-    df_segments.to_excel(os.path.join(result_path, "results.xlsx"))
+    if config["n_policies"] is None:
+        df_segments.to_csv(os.path.join(result_path, "results.csv"))
+        df_segments.to_excel(os.path.join(result_path, "results.xlsx"))
+    else:
+        df_segments.to_csv(
+            os.path.join(result_path, "results_" + str(config["n_policies"]) + ".csv")
+        )
+        df_segments.to_excel(
+            os.path.join(result_path, "results_" + str(config["n_policies"]) + ".xlsx")
+        )
