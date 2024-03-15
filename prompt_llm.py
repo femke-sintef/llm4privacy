@@ -41,7 +41,7 @@ if __name__ == "__main__":
     openai_config = credential_data["openai"]
     openai.api_type = "azure"
     openai.azure_endpoint = openai_config["endpoint"]
-    openai.api_version = "2023-03-15-preview"
+    openai.api_version = "2024-02-15-preview"
     openai.api_key = openai_config["key"]
     print(openai.version.VERSION)
 
