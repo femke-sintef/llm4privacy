@@ -108,6 +108,7 @@ def get_df_segments(dataset_name, n_policies=None, remove_html_tags=False):
 
 def get_df_segments_with_gt(dataset_name, df_annotations, remove_html_tags=False):
     # obtain df_segments with groundtruth
+    print("Get dataframe with segments text and ground truth...")
     df_segments = get_df_segments(dataset_name, remove_html_tags=remove_html_tags)
     tqdm.pandas()
     df_segments["gt"] = df_segments["complete_segment_ID"].progress_apply(
@@ -119,6 +120,7 @@ def get_df_segments_with_gt(dataset_name, df_annotations, remove_html_tags=False
 
 def get_df_results(file_path):
     # obtain df_segments with pred
+    print("Get dataframe with results...")
     df_results = pd.read_excel(file_path)
     tqdm.pandas()
     df_results["pred"] = df_results["llm_response"].progress_apply(detect_categories)
@@ -128,6 +130,8 @@ def get_df_results(file_path):
 
 def detect_categories(llm_response_value):
     pred = []
+    if not isinstance(llm_response_value, str):
+        return pred 
     for category in CATEGORY_NAMES:
         if category == "International and Specific Audiences":
             cat_to_check = "International"
@@ -141,7 +145,7 @@ def detect_categories(llm_response_value):
             cat_to_check = "Third Party Sharing"
         else:
             cat_to_check = category
-
+        
         if cat_to_check.lower() in llm_response_value.lower():
             pred.append(category)
     return pred
