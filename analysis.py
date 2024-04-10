@@ -146,62 +146,63 @@ if __name__ == "__main__":
             report.loc[RELEVANT_COLUMNS, ["lb_conf_" + metric]] = lower_bounds
             report.loc[RELEVANT_COLUMNS, ["ub_conf_" + metric]] = upper_bounds
 
+    # create an overview over the misclassified samples
+    print("Create an overview over the misclassified samples...")
+    correctly_classified = np.all(np.equal(y_pred, y_true), axis=1)
+    ground_truth = y_true[~correctly_classified]
+    ground_truth_list = []
+    for idx in range(len(ground_truth)):
+        ground_truth_list.append(
+            list(np.asarray(RELEVANT_COLUMNS)[ground_truth[idx] == 1])
+        )
+    ground_truth_list = ["&".join(item) for item in ground_truth_list]
+    pred = y_pred[~correctly_classified]
+    pred_list = []
+    for idx in range(len(pred)):
+        pred_list.append(list(np.asarray(RELEVANT_COLUMNS)[pred[idx] == 1]))
+    pred_list = ["&".join(item) for item in pred_list]
+    df_misclassified = df_results[~correctly_classified]
+    df_misclassified.loc[:, ["gt"]] = ground_truth_list
+    df_misclassified.loc[:, ["pred"]] = pred_list
+    df_misclassified = df_misclassified.drop(RELEVANT_COLUMNS, axis=1)
+    df_misclassified = df_misclassified.drop("Other", axis=1, errors="ignore")
 
-# create an overview over the misclassified samples
-print("Create an overview over the misclassified samples...")
-correctly_classified = np.all(np.equal(y_pred, y_true), axis=1)
-ground_truth = y_true[~correctly_classified]
-ground_truth_list = []
-for idx in range(len(ground_truth)):
-    ground_truth_list.append(list(np.asarray(RELEVANT_COLUMNS)[ground_truth[idx] == 1]))
-ground_truth_list = ["&".join(item) for item in ground_truth_list]
-pred = y_pred[~correctly_classified]
-pred_list = []
-for idx in range(len(pred)):
-    pred_list.append(list(np.asarray(RELEVANT_COLUMNS)[pred[idx] == 1]))
-pred_list = ["&".join(item) for item in pred_list]
-df_misclassified = df_results[~correctly_classified]
-df_misclassified.loc[:, ["gt"]] = ground_truth_list
-df_misclassified.loc[:, ["pred"]] = pred_list
-df_misclassified = df_misclassified.drop(RELEVANT_COLUMNS, axis=1)
-df_misclassified = df_misclassified.drop("Other", axis=1, errors="ignore")
+    # obtaining confusion matrix removing multibale samples
+    print("Obtain confusion matrix...")
+    ind_multilabel_true = np.sum(y_true, axis=1) == 1
+    y_true = y_true[ind_multilabel_true]
+    y_pred = y_pred[ind_multilabel_true]
+    ind_multilabel_pred = np.sum(y_pred, axis=1) == 1
+    y_true = y_true[ind_multilabel_pred]
+    y_pred = y_pred[ind_multilabel_pred]
+    disp = metrics.ConfusionMatrixDisplay.from_predictions(
+        y_true.argmax(axis=1),
+        y_pred.argmax(axis=1),
+        display_labels=RELEVANT_COLUMNS_SHORT,
+        # normalize="true",
+    ).plot(
+        xticks_rotation="vertical"
+    )  # ,values_format=".2f")
+    plt.tight_layout()
+    plt.show()
 
-# obtaining confusion matrix removing multibale samples
-print("Obtain confusion matrix...")
-ind_multilabel_true = np.sum(y_true, axis=1) == 1
-y_true = y_true[ind_multilabel_true]
-y_pred = y_pred[ind_multilabel_true]
-ind_multilabel_pred = np.sum(y_pred, axis=1) == 1
-y_true = y_true[ind_multilabel_pred]
-y_pred = y_pred[ind_multilabel_pred]
-disp = metrics.ConfusionMatrixDisplay.from_predictions(
-    y_true.argmax(axis=1),
-    y_pred.argmax(axis=1),
-    display_labels=RELEVANT_COLUMNS_SHORT,
-    # normalize="true",
-
-).plot(xticks_rotation="vertical")#,values_format=".2f")
-plt.tight_layout()
-plt.show()
-
-
-# saving output
-print("Saving ouput...")
-df_misclassified.to_excel(
-    os.path.join(os.path.dirname(result_path), "misclassified.xlsx")
-)
-report.to_excel(os.path.join(os.path.dirname(result_path), "report.xlsx"))
-plt.savefig(os.path.join(os.path.dirname(result_path), "confusion.png"))
-print("Done!")
-# print report with all data
-print(report)
-# print report with all data  
-report = metrics.classification_report(
+    # saving output
+    print("Saving ouput...")
+    df_misclassified.to_excel(
+        os.path.join(os.path.dirname(result_path), "misclassified.xlsx")
+    )
+    report.to_excel(os.path.join(os.path.dirname(result_path), "report.xlsx"))
+    plt.savefig(os.path.join(os.path.dirname(result_path), "confusion.png"))
+    print("Done!")
+    # print report with all data
+    print(report)
+    # print report with all data
+    report = metrics.classification_report(
         y_true,
         y_pred,
         target_names=RELEVANT_COLUMNS,
         output_dict=True,
         zero_division=0.0,
     )
-report = pd.DataFrame(report).transpose()
-print(report)
+    report = pd.DataFrame(report).transpose()
+    print(report)
