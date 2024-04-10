@@ -10,23 +10,30 @@ import csv
 from copy import deepcopy
 
 
-def call_api(messages, engine):
-    return openai.chat.completions.create(
-        model=engine, messages=messages, max_tokens=500
-    )
+def call_api(llm_location, messages, engine):
+    if llm_location == "azure":
+        return openai.chat.completions.create(
+            model=engine, messages=messages, max_tokens=500
+        )
+    else:
+        return client.chat.completions.create(
+            model=engine, messages=messages, max_tokens=500
+        )
 
 
-def call_with_context(context: list, sentence: str, engine: str, role="user") -> str:
+def call_with_context(
+    llm_location, context: list, sentence: str, engine: str, role="user"
+) -> str:
     current_context = deepcopy(context)
     current_context.append({"role": role, "content": sentence})
-    response = call_api(current_context, engine)
+    response = call_api(llm_location, current_context, engine)
     message = response.choices[0].message
     return message.content
 
 
-def get_llm_response(sentence, context, engine):
+def get_llm_response(llm_location, sentence, context, engine):
     try:
-        answer = call_with_context(context, sentence, engine)
+        answer = call_with_context(llm_location, context, sentence, engine)
         print(answer)
         return answer
     except:
@@ -35,19 +42,22 @@ def get_llm_response(sentence, context, engine):
 
 
 if __name__ == "__main__":
-    # connect to api
-    with open("openai.credential", "r") as stream:
-        credential_data = safe_load(stream)
-    openai_config = credential_data["openai"]
-    openai.api_type = "azure"
-    openai.azure_endpoint = openai_config["endpoint"]
-    openai.api_version = "2024-02-15-preview"
-    openai.api_key = openai_config["key"]
-    print(openai.version.VERSION)
-
     # load config
     with open("config.json", "r") as f:
         config = json.load(f)
+
+    if config["llm_location"] == "azure":
+        # connect to api
+        with open("openai.credential", "r") as stream:
+            credential_data = safe_load(stream)
+        openai_config = credential_data["openai"]
+        openai.api_type = "azure"
+        openai.azure_endpoint = openai_config["endpoint"]
+        openai.api_version = "2024-02-15-preview"
+        openai.api_key = openai_config["key"]
+        print(openai.version.VERSION)
+    else:
+        client = openai.OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
 
     # select prompt
     context = get_context(config["prompt_id"])
@@ -75,7 +85,12 @@ if __name__ == "__main__":
 
     # query llm and save progress
     for index, row in tqdm(df_segments.iterrows(), total=df_segments.shape[0]):
-        answer = get_llm_response(row["segment_text"], context, config["engine"])
+        answer = get_llm_response(
+            config["llm_location"],
+            row["segment_text"],
+            context,
+            config["engine"],
+        )
         df_segments.loc[index, "llm_response"] = answer
         with open(os.path.join(result_path, "progress.csv"), "a") as file:
             writer = csv.writer(file)

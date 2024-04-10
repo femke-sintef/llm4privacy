@@ -1,7 +1,8 @@
 {
     "dataset_name": "OPP-115", 
-    "engine": "gpt-4", 
-    "prompt_id": "III",
-    "n_policies": 25,
-    "remove_HTML": true
+    "engine": "gpt-35-turbo-0301",
+    "prompt_id": "IIIa",
+    "n_policies": null,
+    "remove_HTML": true,
+    "llm_location": "local" 
 }

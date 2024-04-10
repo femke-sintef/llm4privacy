@@ -48,6 +48,6 @@ if __name__ == "__main__":
     print(f1s)
     f1s = np.asarray(f1s)
     print(np.mean(f1s))
-print(np.mean(f1s))    
+print(np.mean(f1s))
 print(np.percentile(f1s, 2.5, axis=0))
 print(np.percentile(f1s, 97.5, axis=0))
