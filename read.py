@@ -118,6 +118,37 @@ def get_df_segments_with_gt(dataset_name, df_annotations, remove_html_tags=False
     return df_segments
 
 
+def get_df_segments_for_all_annotators(
+    dataset_name, df_annotations, remove_html_tags=False
+):
+    # obtain df_segments with groundtruth
+    print("Get list of dataframes for each annotator with segments and ground truth...")
+    df_segments = get_df_segments(dataset_name, remove_html_tags=remove_html_tags)
+    tqdm.pandas()
+    annotator_ids = df_annotations["annotator_ID"].unique()
+    list_df_segments_annotators = []
+    for annotator_id in tqdm(annotator_ids):
+        df_annotations_for_single_annotator = df_annotations.loc[
+            df_annotations["annotator_ID"] == annotator_id
+        ]
+        df_segments_for_single_annotator = df_segments.loc[
+            df_segments["complete_segment_ID"].isin(
+                df_annotations_for_single_annotator["complete_segment_ID"]
+            )
+        ]
+        df_segments_for_single_annotator["gt"] = df_segments[
+            "complete_segment_ID"
+        ].progress_apply(
+            get_ground_truth, args=(df_annotations_for_single_annotator, 1)
+        )
+        df_segments_for_single_annotator = df_segments_for_single_annotator.join(
+            df_segments_for_single_annotator["gt"].str.join("|").str.get_dummies()
+        )
+        list_df_segments_annotators.append(df_segments_for_single_annotator)
+
+    return list_df_segments_annotators
+
+
 def get_df_results(file_path):
     # obtain df_segments with pred
     print("Get dataframe with results...")
@@ -131,7 +162,7 @@ def get_df_results(file_path):
 def detect_categories(llm_response_value):
     pred = []
     if not isinstance(llm_response_value, str):
-        return pred 
+        return pred
     for category in CATEGORY_NAMES:
         if category == "International and Specific Audiences":
             cat_to_check = "International"
@@ -145,7 +176,7 @@ def detect_categories(llm_response_value):
             cat_to_check = "Third Party Sharing"
         else:
             cat_to_check = category
-        
+
         if cat_to_check.lower() in llm_response_value.lower():
             pred.append(category)
     return pred
@@ -165,21 +196,25 @@ CATEGORY_NAMES = [
 ]
 
 
-def get_ground_truth(complete_segment_ID_value, df_annotations):
+def get_ground_truth(complete_segment_ID_value, df_annotations, min_occurence=2):
     annotations = df_annotations.loc[
         df_annotations["complete_segment_ID"] == complete_segment_ID_value
     ]
     annotations = annotations[["annotator_ID", "category_name"]].drop_duplicates()
     annotations = annotations["category_name"].value_counts()[
-        annotations["category_name"].value_counts() >= 2
+        annotations["category_name"].value_counts() >= min_occurence
     ]
     return annotations.index.to_list()
 
 
 if __name__ == "__main__":
     # obtain dfs
-    df_segments = get_df_segments("OPP-115", remove_html_tags=True)
     df_annotations = get_df_annotations("OPP-115")
+    list_df_segments = get_df_segments_for_all_annotators(
+        "OPP-115", df_annotations, remove_html_tags=True
+    )
+    df_segments = get_df_segments("OPP-115", remove_html_tags=True)
+
     df_segments_with_gt = get_df_segments_with_gt("OPP-115", df_annotations)
     df_results = get_df_results("results/gpt-4/OPP-115/20240208_113137/results.xlsx")
     # merge dfs to obtain one df with both tags and sentences
