@@ -37,8 +37,8 @@ def get_llm_response(llm_location, sentence, context, engine):
         answer = call_with_context(llm_location, context, sentence, engine)
         print(answer)
         return answer
-    except:
-        print("Error")
+    except Exception as e:
+        print(e)
         return "ERROR"
 
 
@@ -83,7 +83,12 @@ if __name__ == "__main__":
     else:
         mode = "partial"
     result_path = os.path.join(
-        "results", config["dataset_name"], config["engine"], config["prompt_id"],mode, timestamp
+        "results",
+        config["dataset_name"],
+        config["engine"],
+        config["prompt_id"],
+        mode,
+        timestamp,
     )
     if not os.path.exists(result_path):
         os.makedirs(result_path)

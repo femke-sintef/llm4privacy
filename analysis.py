@@ -167,7 +167,7 @@ if __name__ == "__main__":
     df_misclassified = df_misclassified.drop(RELEVANT_COLUMNS, axis=1)
     df_misclassified = df_misclassified.drop("Other", axis=1, errors="ignore")
 
-    # obtaining confusion matrix removing multibale samples
+    # obtaining confusion matrix removing multilabel samples
     print("Obtain confusion matrix...")
     ind_multilabel_true = np.sum(y_true, axis=1) == 1
     y_true = y_true[ind_multilabel_true]
@@ -195,8 +195,10 @@ if __name__ == "__main__":
     plt.savefig(os.path.join(os.path.dirname(result_path), "confusion.png"))
     print("Done!")
     # print report with all data
+    print("RESULTS OBTAINED FOR ALL DATA:")
     print(report)
-    # print report with all data
+    # print report with only single label data
+    print("RESULTS EXCLUDING MULTILABEL DATA:")
     report = metrics.classification_report(
         y_true,
         y_pred,

@@ -20,16 +20,16 @@ import re
 PATH_TO_DATA = "data"
 
 CATEGORY_NAMES = [
-    "Other",
-    "User Choice/Control",
     "First Party Collection/Use",
     "Third Party Sharing/Collection",
-    "Do Not Track",
+    "User Choice/Control",
     "User Access, Edit and Deletion",
-    "Data Security",
     "Data Retention",
-    "International and Specific Audiences",
+    "Data Security",
     "Policy Change",
+    "Do Not Track",
+    "International and Specific Audiences",
+    # "Other",
 ]
 
 
@@ -163,6 +163,20 @@ def detect_categories(llm_response_value):
     pred = []
     if not isinstance(llm_response_value, str):
         return pred
+    if len(llm_response_value) == 1:
+        alpha_options = ["a", "b", "c", "d", "e", "f", "g", "h", "i"]
+        romam_options = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix"]
+        if llm_response_value.isdigit():
+            llm_response_value = CATEGORY_NAMES[int(llm_response_value) - 1]
+        elif llm_response_value.lower() in alpha_options:
+            llm_response_value = CATEGORY_NAMES[
+                alpha_options.index(llm_response_value.lower())
+            ]
+        elif llm_response_value.lower() in romam_options:
+            llm_response_value = CATEGORY_NAMES[
+                romam_options.index(llm_response_value.lower())
+            ]
+
     for category in CATEGORY_NAMES:
         if category == "International and Specific Audiences":
             cat_to_check = "International"
@@ -171,29 +185,15 @@ def detect_categories(llm_response_value):
         elif category == "User Choice/Control":
             cat_to_check = "User Choice"
         elif category == "First Party Collection/Use":
-            cat_to_check = "First Party Collection"
+            cat_to_check = "st Party Collection"
         elif category == "Third Party Sharing/Collection":
-            cat_to_check = "Third Party Sharing"
+            cat_to_check = "rd Party Sharing"
         else:
             cat_to_check = category
 
         if cat_to_check.lower() in llm_response_value.lower():
             pred.append(category)
     return pred
-
-
-CATEGORY_NAMES = [
-    "Other",
-    "User Choice/Control",
-    "First Party Collection/Use",
-    "Third Party Sharing/Collection",
-    "Do Not Track",
-    "User Access, Edit and Deletion",
-    "Data Security",
-    "Data Retention",
-    "International and Specific Audiences",
-    "Policy Change",
-]
 
 
 def get_ground_truth(complete_segment_ID_value, df_annotations, min_occurence=2):
