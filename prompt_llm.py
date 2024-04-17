@@ -11,6 +11,7 @@ from copy import deepcopy
 
 
 def call_api(llm_location, messages, engine):
+    assert llm_location in ["azure", "local"]
     if llm_location == "azure":
         return openai.chat.completions.create(
             model=engine, messages=messages, max_tokens=500
@@ -77,8 +78,12 @@ if __name__ == "__main__":
 
     # get save location ready
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    if config["n_policies"] is None:
+        mode = "complete"
+    else:
+        mode = "partial"
     result_path = os.path.join(
-        "results", config["engine"], config["dataset_name"], timestamp
+        "results", config["dataset_name"], config["engine"], config["prompt_id"],mode, timestamp
     )
     if not os.path.exists(result_path):
         os.makedirs(result_path)
