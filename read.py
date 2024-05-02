@@ -149,60 +149,69 @@ def get_df_segments_for_all_annotators(
     return list_df_segments_annotators
 
 
-def get_df_results(file_path):
+def get_df_results(file_path, return_dummies = True):
     # obtain df_segments with pred
     print("Get dataframe with results...")
     df_results = pd.read_excel(file_path)
     tqdm.pandas()
     df_results["pred"] = df_results["llm_response"].progress_apply(detect_categories)
-    df_results = df_results.join(df_results["pred"].str.join("|").str.get_dummies())
+    if return_dummies:
+        df_results = df_results.join(df_results["pred"].str.join("|").str.get_dummies())
     return df_results
 
 
 def detect_categories(llm_response_value):
     pred = []
+    roman_options = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix"]
+    alpha_options = ["a", "b", "c", "d", "e", "f", "g", "h", "i"]        
     if not isinstance(llm_response_value, str):
         return pred
-    if len(llm_response_value) == 1:
-        alpha_options = ["a", "b", "c", "d", "e", "f", "g", "h", "i"]
-        romam_options = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix"]
-        if llm_response_value.isdigit():
-            llm_response_value = CATEGORY_NAMES[int(llm_response_value) - 1]
-        elif llm_response_value.lower() in alpha_options:
+    if llm_response_value.isspace():
+        return pred
+    # if len(llm_response_value) == 1:
+        
+    if llm_response_value.isdigit():
+        llm_response_value = CATEGORY_NAMES[int(llm_response_value) - 1]
+    elif llm_response_value.lower() in alpha_options:
             llm_response_value = CATEGORY_NAMES[
                 alpha_options.index(llm_response_value.lower())
             ]
-        elif llm_response_value.lower() in romam_options:
+    elif llm_response_value.lower() in roman_options:
             llm_response_value = CATEGORY_NAMES[
-                romam_options.index(llm_response_value.lower())
+                roman_options.index(llm_response_value.lower())
             ]
 
     for category in CATEGORY_NAMES:
         if category == "International and Specific Audiences":
-            cat_to_check = "International"
+            cats_to_check = ["International", "Specific", "child"]
         elif category == "User Access, Edit and Deletion":
-            cat_to_check = "User Access"
+            cats_to_check = ["Access"]
         elif category == "User Choice/Control":
-            cat_to_check = "User Choice"
+            cats_to_check = ["Choice"]
         elif category == "First Party Collection/Use":
-            cat_to_check = "st Party Collection"
+            cats_to_check = ["st Party", "First-Party"]
         elif category == "Third Party Sharing/Collection":
-            cat_to_check = "rd Party Sharing"
+            cats_to_check = ["rd Party", "Third-Party"]
+        elif category == "Data Retention":
+            cats_to_check = ["retention"]
+        elif category == "Data Security":
+            cats_to_check = ["security"]
         else:
-            cat_to_check = category
-
-        if cat_to_check.lower() in llm_response_value.lower():
-            pred.append(category)
+            cats_to_check = [category]
+        for cat_to_check in cats_to_check:
+            if cat_to_check.lower() in llm_response_value.lower():
+                pred.append(category)
+                break
     return pred
 
 
-def get_ground_truth(complete_segment_ID_value, df_annotations, min_occurence=2):
+def get_ground_truth(complete_segment_ID_value, df_annotations, min_occurence=2, column_name="category_name"):
     annotations = df_annotations.loc[
         df_annotations["complete_segment_ID"] == complete_segment_ID_value
     ]
-    annotations = annotations[["annotator_ID", "category_name"]].drop_duplicates()
-    annotations = annotations["category_name"].value_counts()[
-        annotations["category_name"].value_counts() >= min_occurence
+    annotations = annotations[["annotator_ID", column_name]].drop_duplicates()
+    annotations = annotations[column_name].value_counts()[
+        annotations[column_name].value_counts() >= min_occurence
     ]
     return annotations.index.to_list()
 
@@ -216,7 +225,7 @@ if __name__ == "__main__":
     df_segments = get_df_segments("OPP-115", remove_html_tags=True)
 
     df_segments_with_gt = get_df_segments_with_gt("OPP-115", df_annotations)
-    df_results = get_df_results("results/gpt-4/OPP-115/20240208_113137/results.xlsx")
+    df_results = get_df_results("results/OPP-115/gpt-4/Va/complete/20240422_103113/results.xlsx")
     # merge dfs to obtain one df with both tags and sentences
     df = df_annotations.merge(df_segments, how="left", on="complete_segment_ID")
 

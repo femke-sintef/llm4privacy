@@ -6,6 +6,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
+result_path_base = "results/OPP-115/"
+OVERWRITE = False           
+
 RELEVANT_COLUMNS = [  # "Other",
     "User Choice/Control",
     "First Party Collection/Use",
@@ -29,47 +32,7 @@ RELEVANT_COLUMNS_SHORT = [  # "Other",
     "Policy Change",
 ]
 
-if __name__ == "__main__":
-    # obtain dfs
-    print("Obtaining saved data for analysis...")
-    df_annotations = get_df_annotations("OPP-115")
-    df_segments_with_gt = get_df_segments_with_gt("OPP-115", df_annotations)
-    df_segments_with_gt.set_index("complete_segment_ID", inplace=True)
-
-    # result_path = "results/gpt-4/OPP-115/20240208_113137/results.xlsx"  # PROMPT_1
-    # result_path ="results/gpt-4/OPP-115/20240228_085730/results_25.xlsx" # PROMPT_I
-    # result_path ="results/gpt-4/OPP-115/20240228_101004/results_25.xlsx" # PROMPT_II
-    result_path ="results/gpt-4/OPP-115/20240228_111958/results_25.xlsx" # PROMPT_III
-    # result_path = "results/gpt-4/OPP-115/20240304_095338/results_25.xlsx" # PROMPT_III, no html
-    # result_path = "results/gpt-4/OPP-115/20240313_090115/results.xlsx" # PROMPT_Ia
-    # result_path = "results/gpt-4/OPP-115/20240313_135803/results.xlsx" # PROMPT_IIa
-    # result_path = "results/gpt-4/OPP-115/20240314_090630/results.xlsx" # PROMPT_IIIa
-
-    df_results = get_df_results(result_path)
-    df_results.set_index("complete_segment_ID", inplace=True)
-    df_segments_with_gt = df_segments_with_gt.loc[df_results.index]
-    for column in RELEVANT_COLUMNS:
-        if column not in df_results.columns:
-            df_results[column] = 0
-
-    # obtain dummy arrays, removing other category
-    y_true = df_segments_with_gt[RELEVANT_COLUMNS].values
-    y_pred = df_results[RELEVANT_COLUMNS].values
-    ind_only_other = np.sum(y_true, axis=1) == 0
-    y_true = y_true[~ind_only_other]
-    y_pred = y_pred[~ind_only_other]
-    df_results = df_results[~ind_only_other]
-    df_segments_with_gt = df_segments_with_gt[~ind_only_other]
-
-    # generate report of performance metrics in df form
-    report = metrics.classification_report(
-        y_true,
-        y_pred,
-        target_names=RELEVANT_COLUMNS,
-        output_dict=True,
-        zero_division=0.0,
-    )
-    report = pd.DataFrame(report).transpose()
+def get_confidence_intervals(df_segments_with_gt, df_results, report):
     if len(df_segments_with_gt["policy_ID"].unique()) == 115:
         # subsample for confidence intervals
         print("Subsample for confidence intervals...")
@@ -111,7 +74,7 @@ if __name__ == "__main__":
                         zero_division=0.0,
                     )
                 )
-
+    
         # enter subsample intervals into report
         report[
             [
@@ -145,66 +108,99 @@ if __name__ == "__main__":
             )
             report.loc[RELEVANT_COLUMNS, ["lb_conf_" + metric]] = lower_bounds
             report.loc[RELEVANT_COLUMNS, ["ub_conf_" + metric]] = upper_bounds
+    
+    return report
 
-    # create an overview over the misclassified samples
-    print("Create an overview over the misclassified samples...")
-    correctly_classified = np.all(np.equal(y_pred, y_true), axis=1)
-    ground_truth = y_true[~correctly_classified]
-    ground_truth_list = []
-    for idx in range(len(ground_truth)):
-        ground_truth_list.append(
-            list(np.asarray(RELEVANT_COLUMNS)[ground_truth[idx] == 1])
+if __name__ == "__main__":
+    result_paths = []
+    for path, subdirs, files in os.walk(result_path_base):
+        for name in files:
+            if name == "results.xlsx":
+                result_paths.append(os.path.join(path, name))
+
+    df_annotations = get_df_annotations("OPP-115")
+    for result_path in result_paths:
+        if not (OVERWRITE or not os.path.exists(os.path.join(os.path.dirname(result_path), "report.xlsx"))):
+            continue
+        # obtain data
+        print("Obtaining saved data for analysis...")
+        df_segments_with_gt = get_df_segments_with_gt("OPP-115", df_annotations, remove_html_tags=True)
+        df_segments_with_gt.set_index("complete_segment_ID", inplace=True)
+        df_results = get_df_results(result_path)
+        df_results.set_index("complete_segment_ID", inplace=True)
+        df_segments_with_gt = df_segments_with_gt.loc[df_results.index]
+        
+        for column in RELEVANT_COLUMNS:
+            if column not in df_results.columns:
+                df_results[column] = 0
+
+        # obtain dummy arrays, removing other category
+        y_true = df_segments_with_gt[RELEVANT_COLUMNS].values
+        y_pred = df_results[RELEVANT_COLUMNS].values
+        ind_only_other = np.sum(y_true, axis=1) == 0
+        y_true = y_true[~ind_only_other]
+        y_pred = y_pred[~ind_only_other]
+        df_results = df_results[~ind_only_other]
+        df_segments_with_gt = df_segments_with_gt[~ind_only_other]
+
+        # generate report of performance metrics in df form
+        report = metrics.classification_report(
+            y_true,
+            y_pred,
+            target_names=RELEVANT_COLUMNS,
+            output_dict=True,
+            zero_division=0.0,
         )
-    ground_truth_list = ["&".join(item) for item in ground_truth_list]
-    pred = y_pred[~correctly_classified]
-    pred_list = []
-    for idx in range(len(pred)):
-        pred_list.append(list(np.asarray(RELEVANT_COLUMNS)[pred[idx] == 1]))
-    pred_list = ["&".join(item) for item in pred_list]
-    df_misclassified = df_results[~correctly_classified]
-    df_misclassified.loc[:, ["gt"]] = ground_truth_list
-    df_misclassified.loc[:, ["pred"]] = pred_list
-    df_misclassified = df_misclassified.drop(RELEVANT_COLUMNS, axis=1)
-    df_misclassified = df_misclassified.drop("Other", axis=1, errors="ignore")
+        report = pd.DataFrame(report).transpose()
+        report  = get_confidence_intervals(df_segments_with_gt, df_results, report)
+        # create an overview over the misclassified samples
+        print("Create an overview over the misclassified samples...")
+        correctly_classified = np.all(np.equal(y_pred, y_true), axis=1)
+        ground_truth = y_true[~correctly_classified]
+        ground_truth_list = []
+        for idx in range(len(ground_truth)):
+            ground_truth_list.append(
+                list(np.asarray(RELEVANT_COLUMNS)[ground_truth[idx] == 1])
+            )
+        ground_truth_list = ["&".join(item) for item in ground_truth_list]
+        pred = y_pred[~correctly_classified]
+        pred_list = []
+        for idx in range(len(pred)):
+            pred_list.append(list(np.asarray(RELEVANT_COLUMNS)[pred[idx] == 1]))
+        pred_list = ["&".join(item) for item in pred_list]
+        df_misclassified = df_results[~correctly_classified]
+        df_misclassified.loc[:, ["gt"]] = ground_truth_list
+        df_misclassified.loc[:, ["pred"]] = pred_list
+        df_misclassified = df_misclassified.drop(RELEVANT_COLUMNS, axis=1)
+        df_misclassified = df_misclassified.drop("Other", axis=1, errors="ignore")
 
-    # obtaining confusion matrix removing multilabel samples
-    print("Obtain confusion matrix...")
-    ind_multilabel_true = np.sum(y_true, axis=1) == 1
-    y_true = y_true[ind_multilabel_true]
-    y_pred = y_pred[ind_multilabel_true]
-    ind_multilabel_pred = np.sum(y_pred, axis=1) == 1
-    y_true = y_true[ind_multilabel_pred]
-    y_pred = y_pred[ind_multilabel_pred]
-    disp = metrics.ConfusionMatrixDisplay.from_predictions(
-        y_true.argmax(axis=1),
-        y_pred.argmax(axis=1),
-        display_labels=RELEVANT_COLUMNS_SHORT,
-        # normalize="true",
-    ).plot(
-        xticks_rotation="vertical"
-    )  # ,values_format=".2f")
-    plt.tight_layout()
-    plt.show()
+        # obtaining confusion matrix removing multilabel samples
+        print("Obtain confusion matrix...")
+        ind_multilabel_true = np.sum(y_true, axis=1) == 1
+        y_true = y_true[ind_multilabel_true]
+        y_pred = y_pred[ind_multilabel_true]
+        ind_multilabel_pred = np.sum(y_pred, axis=1) == 1
+        y_true = y_true[ind_multilabel_pred]
+        y_pred = y_pred[ind_multilabel_pred]
+        disp = metrics.ConfusionMatrixDisplay.from_predictions(
+            y_true.argmax(axis=1),
+            y_pred.argmax(axis=1),
+            display_labels=RELEVANT_COLUMNS_SHORT,
+            # normalize="true",
+        ).plot(
+            xticks_rotation="vertical"
+        )  # ,values_format=".2f")
+        plt.tight_layout()
+        plt.show()
 
-    # saving output
-    print("Saving ouput...")
-    df_misclassified.to_excel(
-        os.path.join(os.path.dirname(result_path), "misclassified.xlsx")
-    )
-    report.to_excel(os.path.join(os.path.dirname(result_path), "report.xlsx"))
-    plt.savefig(os.path.join(os.path.dirname(result_path), "confusion.png"))
-    print("Done!")
-    # print report with all data
-    print("RESULTS OBTAINED FOR ALL DATA:")
-    print(report)
-    # print report with only single label data
-    print("RESULTS EXCLUDING MULTILABEL DATA:")
-    report = metrics.classification_report(
-        y_true,
-        y_pred,
-        target_names=RELEVANT_COLUMNS,
-        output_dict=True,
-        zero_division=0.0,
-    )
-    report = pd.DataFrame(report).transpose()
-    print(report)
+        # saving output
+        print("Saving ouput...")
+        df_misclassified.to_excel(
+            os.path.join(os.path.dirname(result_path), "misclassified.xlsx")
+        )
+        report.to_excel(os.path.join(os.path.dirname(result_path), "report.xlsx"))
+        plt.savefig(os.path.join(os.path.dirname(result_path), "confusion.png"))
+        print("Done!")
+        # print report with all data
+        print("RESULTS OBTAINED FOR ALL DATA:")
+        print(report)
