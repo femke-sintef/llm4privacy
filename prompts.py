@@ -31,6 +31,10 @@ def get_context(prompt_id):
         return [{"role": "system", "content": PROMPT_Xa}]
     elif prompt_id == "XIa":
         return [{"role": "system", "content": PROMPT_XIa}]
+    elif prompt_id == "COT1":
+        return [{"role": "system", "content": PROMPT_COT1}]
+    elif prompt_id == "COT2":
+        return [{"role": "system", "content": PROMPT_COT2}]
     else:
         raise NotImplementedError()
 
@@ -806,4 +810,183 @@ Classification: International and Specific Audiences
 
 I have a specific task for you: I will give you a sentence from a privacy policy, and you will classify the sentence with one of these nine data practice categories. Please only respond with one of the nine categories for each sentence.
 
+"""
+PROMPT_COT1 = """
+Websites and digital products have privacy policies. A data practice means how the data is used and processed by an organization. A sentence (policy segment) in a privacy policy can be annotated with one of the following nine data practice categories:
+
+Category 1. First Party Collection/Use: This category is about how and why a service provider collects user information. In first party collection, the service provider that owns or operates the website/platform/service directly collects data from individuals. For instance, when a customer engages with the services of company A, company A collects data such as the products they have browsed, their purchasing choices, or their behavior patterns. When company A makes a product recommendation to a customer based on this data, it can be referred to as first-party advertising. In this case, collection and use of personal data is identified as first party data collection and use. In privacy policies, certain keywords and phrases can help to identify if the data collection or use is first party. For example: "We collect", "Data you provide", "Information we collect", "Our servers", "Our cookies", "We use your data" "Data collected from your interaction with our services", "Information you submit", “We restrict access to personal information to our employees, contractors, and agents”, etc. The following three policy segments are example segments classified as First Party Collection/Use.
+
+Category 2. Third Party Sharing/Collection: This category is about how user information may be shared with or collected by third parties. In third party sharing/collection an entity other than the service provider collects data from users through the service provider's platform. Third parties could include advertisers, ad network companies, analytic companies, or partner services that have their own data collection and privacy practices. Third-party entities often work with a variety of first-party websites, collecting information on user profiles from diverse sources, including news, weather, entertainment, and travel websites. For instance, if a customer uses Amazon.com's services and Amazon utilizes details about the user that have been collected by companies other than itself, this is known as third-party data collection and use. In privacy policies, certain keywords and phrases can help to identify if the data collection or use is third-party. For example: "Third-party providers", "External partners", "Ad networks", "Data we share" "Cookies from third-party advertisers", "Third-party cookies", "Third-party analytics", "Our partners’ services", “data processors”, etc. The following five policy segments are example segments classified as Third Party Sharing/Collection.
+
+Category 3. User Choice/Control: This category is about choices and control options available to users. Choice means giving individuals options as to how their personal information may be used. Specifically, choice relates to secondary uses of information—that is, uses beyond those necessary to complete the contemplated transaction. Control means privacy controls that allow individuals to manage use and sharing of their data. Example for choice/control can be following: “opt-in”, “opt-out”, “cookie preference” (functional/recommended/essential/performance/advertising), “location data controls”, “privacy control”, “communication preference”, “do-not-track”, “do-not-sell”, “withdraw consent”, etc. The following three policy segments are example segments classified as User Choice/Control.
+
+Category 4. User Access, Edit, and Deletion: This category is about if and how users may access, edit, or delete their information. These are privacy rights-based choices. In privacy policies such provision can be found in the following keywords and phrases: "right to access", “rights you have”, "request a copy", "view your information", "download your data", "personal data report", "obtain a copy", “how do I change my information”, “ how can I move my information”, "data subject access request", “delete information”, etc. The following three policy segments are example segments classified as User Access, Edit, and deletion.
+
+Category 5. Data Retention: This category is about how long user information is stored. Retention period outlines the time period for which personal information is stored and when it will be deleted or anonymized. Here are examples of some keywords, terms, and phrases that commonly identify "data retention" in privacy policies: "retention period", "how long we keep your data", “retaining your information”, "storage duration", "duration", "keep your data", “hold your information”, “hold your information any longer than we have to”, etc. The following three policy segments are example segments classified as Data Retention.
+
+Category 6. Data Security: This category is about how user information is protected. In particular, it means the security measures that ensure security of personal data, including encryption or storage of data on secure servers. It also includes processing user data to improve safety and reliability of products, services, and users. Here are examples of some keywords, terms, and phrases that commonly identify "data security" in privacy policies: “security, fraud and abuse prevention”, “information security”, “security tips”, “security measures”, “security features”, “security partners”, “security controls”, “encryption”, “data breach procedure”, “secure server”, “firewalls and antivirus software”, “appropriate technical and organizational measures to safeguard personal information”, etc. The following three policy segments are example segments classified as Data Security.
+
+Category 7. Policy Change: This category is about if and how users will be informed about changes to the privacy policy. Here are examples of some keywords, terms, and phrases that commonly identify "policy change" in privacy policies: “notify you about upcoming changes”, “we change this privacy policy from time to time”, “email notification of privacy policy changes”, “notification of changes”, “revisions to this policy”, “policy update alert”, “how we will inform you”, etc. The following three policy segments are example segments classified as Policy Change.
+
+Category 8. Do Not Track: This category is about if and how Do Not Track signals for online tracking and advertising are honored. Examples of keywords, terms, and phrases that commonly reflect "Do Not Track" in privacy policies include: “you can switch off some cookies and similar tracking technologies”, “online tracking preferences”, “do not track”, “behavioral tracking opt-out”, “opting-out of tracking”, etc. The following three policy segments are example segments classified as DO Not Track.
+
+Category 9. International and Specific Audiences: This category is about practices that pertain only to a specific group of users (e.g., children, Europeans, or California residents). It outlines specific provisions that apply exclusively to certain categories of users, such as children, residents of Europe, or individuals living in California. The privacy policy includes clauses for these distinct user groups. Here are examples of some keywords, terms, and phrases that commonly identify international audiences or specific audiences in privacy policies: “child permissions”, “special protection of children's personal data”, “age-specific guidelines”, “kids profile”, “parental consent”, “children and teens”, “international users”, “regional laws”, “GDPR” (General Data Protection Regulation for European users), “CCPA” (California Consumer Privacy Act for California residents), “COPPA” (Children's Online Privacy Protection Act), “ CIPA” (Children’s Internet Protection Act in United States), “specific audience considerations”, “disclosure and international transfers”, “supplemental privacy disclosures for certain services and regions”, etc. The following three policy segments are example segments classified as International and Specific Audiences.
+
+Task:
+
+I will give you a sentence from a privacy policy, and you will classify the sentence into one of these nine data practice categories. Please only respond with one of the nine categories for each sentence. Please follow these steps:
+
+    · Read the sentence carefully.
+    · Identify keywords and phrases that indicate a specific data practice.
+    · Match these indicators with the descriptions of the nine categories.
+    · Determine the most appropriate category for the sentence.
+
+Let's work through a few examples to demonstrate this process:
+
+Example Sentence 1: “We collect the following categories of personal information about you: name, email address, profile information, payment details, and device IDs.”
+
+    · Step 1: Read the sentence carefully.
+        o The sentence is about collecting personal information.
+    · Step 2: Identify keywords such as "We collect," "personal information," and specific data types listed.
+        o Keywords identified: "We collect," "categories of personal information," "name," "email address," "profile information," "payment details," "device IDs."
+    · Step 3: Match these indicators with the descriptions of the nine categories.
+        o The sentence describes data collected directly by the service provider.
+    · Step 4: Determine that this sentence fits the First Party Collection/Use category.
+
+Example Sentence 2: “Our website uses third-party analytics services to help understand your usage of our services.”
+
+    · Step 1: Read the sentence carefully.
+        o The sentence is about using third-party services.
+    · Step 2: Identify keywords such as "third-party analytics services."
+        o Keywords identified: "third-party," "analytics services."
+    · Step 3: Match these indicators with the descriptions of the nine categories.
+        o The sentence describes data shared with third parties.
+    · Step 4: Determine that this sentence fits the Third Party Sharing/Collection category.
+
+Now, you try. Please only respond with one of the nine categories for each sentence. Here is a sentence for you to classify:
+"""
+
+PROMPT_COT2 = """
+Websites and digital products have privacy policies. A data practice means how the data is used and processed by an organization. A sentence (policy segment) in a privacy policy can be annotated with one of the following nine data practice categories:
+
+Category 1. First Party Collection/Use: This category is about how and why a service provider collects user information. In first party collection, the service provider that owns or operates the website/platform/service directly collects data from individuals. For instance, when a customer engages with the services of company A, company A collects data such as the products they have browsed, their purchasing choices, or their behavior patterns. When company A makes a product recommendation to a customer based on this data, it can be referred to as first-party advertising. In this case, collection and use of personal data is identified as first party data collection and use. In privacy policies, certain keywords and phrases can help to identify if the data collection or use is first party. For example: "We collect", "Data you provide", "Information we collect", "Our servers", "Our cookies", "We use your data" "Data collected from your interaction with our services", "Information you submit", “We restrict access to personal information to our employees, contractors, and agents”, etc. The following three policy segments are example segments classified as First Party Collection/Use.
+
+Category 2. Third Party Sharing/Collection: This category is about how user information may be shared with or collected by third parties. In third party sharing/collection an entity other than the service provider collects data from users through the service provider's platform. Third parties could include advertisers, ad network companies, analytic companies, or partner services that have their own data collection and privacy practices. Third-party entities often work with a variety of first-party websites, collecting information on user profiles from diverse sources, including news, weather, entertainment, and travel websites. For instance, if a customer uses Amazon.com's services and Amazon utilizes details about the user that have been collected by companies other than itself, this is known as third-party data collection and use. In privacy policies, certain keywords and phrases can help to identify if the data collection or use is third-party. For example: "Third-party providers", "External partners", "Ad networks", "Data we share" "Cookies from third-party advertisers", "Third-party cookies", "Third-party analytics", "Our partners’ services", “data processors”, etc. The following five policy segments are example segments classified as Third Party Sharing/Collection.
+
+Category 3. User Choice/Control: This category is about choices and control options available to users. Choice means giving individuals options as to how their personal information may be used. Specifically, choice relates to secondary uses of information—that is, uses beyond those necessary to complete the contemplated transaction. Control means privacy controls that allow individuals to manage use and sharing of their data. Example for choice/control can be following: “opt-in”, “opt-out”, “cookie preference” (functional/recommended/essential/performance/advertising), “location data controls”, “privacy control”, “communication preference”, “do-not-track”, “do-not-sell”, “withdraw consent”, etc. The following three policy segments are example segments classified as User Choice/Control.
+
+Category 4. User Access, Edit, and Deletion: This category is about if and how users may access, edit, or delete their information. These are privacy rights-based choices. In privacy policies such provision can be found in the following keywords and phrases: "right to access", “rights you have”, "request a copy", "view your information", "download your data", "personal data report", "obtain a copy", “how do I change my information”, “ how can I move my information”, "data subject access request", “delete information”, etc. The following three policy segments are example segments classified as User Access, Edit, and deletion.
+
+Category 5. Data Retention: This category is about how long user information is stored. Retention period outlines the time period for which personal information is stored and when it will be deleted or anonymized. Here are examples of some keywords, terms, and phrases that commonly identify "data retention" in privacy policies: "retention period", "how long we keep your data", “retaining your information”, "storage duration", "duration", "keep your data", “hold your information”, “hold your information any longer than we have to”, etc. The following three policy segments are example segments classified as Data Retention.
+
+Category 6. Data Security: This category is about how user information is protected. In particular, it means the security measures that ensure security of personal data, including encryption or storage of data on secure servers. It also includes processing user data to improve safety and reliability of products, services, and users. Here are examples of some keywords, terms, and phrases that commonly identify "data security" in privacy policies: “security, fraud and abuse prevention”, “information security”, “security tips”, “security measures”, “security features”, “security partners”, “security controls”, “encryption”, “data breach procedure”, “secure server”, “firewalls and antivirus software”, “appropriate technical and organizational measures to safeguard personal information”, etc. The following three policy segments are example segments classified as Data Security.
+
+Category 7. Policy Change: This category is about if and how users will be informed about changes to the privacy policy. Here are examples of some keywords, terms, and phrases that commonly identify "policy change" in privacy policies: “notify you about upcoming changes”, “we change this privacy policy from time to time”, “email notification of privacy policy changes”, “notification of changes”, “revisions to this policy”, “policy update alert”, “how we will inform you”, etc. The following three policy segments are example segments classified as Policy Change.
+
+Category 8. Do Not Track: This category is about if and how Do Not Track signals for online tracking and advertising are honored. Examples of keywords, terms, and phrases that commonly reflect "Do Not Track" in privacy policies include: “you can switch off some cookies and similar tracking technologies”, “online tracking preferences”, “do not track”, “behavioral tracking opt-out”, “opting-out of tracking”, etc. The following three policy segments are example segments classified as DO Not Track.
+
+Category 9. International and Specific Audiences: This category is about practices that pertain only to a specific group of users (e.g., children, Europeans, or California residents). It outlines specific provisions that apply exclusively to certain categories of users, such as children, residents of Europe, or individuals living in California. The privacy policy includes clauses for these distinct user groups. Here are examples of some keywords, terms, and phrases that commonly identify international audiences or specific audiences in privacy policies: “child permissions”, “special protection of children's personal data”, “age-specific guidelines”, “kids profile”, “parental consent”, “children and teens”, “international users”, “regional laws”, “GDPR” (General Data Protection Regulation for European users), “CCPA” (California Consumer Privacy Act for California residents), “COPPA” (Children's Online Privacy Protection Act), “ CIPA” (Children’s Internet Protection Act in United States), “specific audience considerations”, “disclosure and international transfers”, “supplemental privacy disclosures for certain services and regions”, etc. The following three policy segments are example segments classified as International and Specific Audiences.
+
+Task:
+
+I will give you a sentence from a privacy policy, and you will classify the sentence into one of these nine data practice categories. Please only respond with one of the nine categories for each sentence. Please follow these steps:
+
+    · Read the sentence carefully.
+    · Identify keywords and phrases that indicate a specific data practice.
+    · Match these indicators with the descriptions of the nine categories.
+    · Determine the most appropriate category for the sentence.
+
+Let's work through a few examples to demonstrate this process:
+
+Example Sentence 1: “We collect the following categories of personal information about you: name, email address, profile information, payment details, and device IDs.”
+
+    · Step 1: Read the sentence carefully.
+        o The sentence is about collecting personal information.
+    · Step 2: Identify keywords such as "We collect," "personal information," and specific data types listed.
+        o Keywords identified: "We collect," "categories of personal information," "name," "email address," "profile information," "payment details," "device IDs."
+    · Step 3: Match these indicators with the descriptions of the nine categories.
+        o The sentence describes data collected directly by the service provider.
+    · Step 4: Determine that this sentence fits the First Party Collection/Use category.
+
+Example Sentence 2: “Our website uses third-party analytics services to help understand your usage of our services.”
+
+    · Step 1: Read the sentence carefully.
+        o The sentence is about using third-party services.
+    · Step 2: Identify keywords such as "third-party analytics services."
+        o Keywords identified: "third-party," "analytics services."
+    · Step 3: Match these indicators with the descriptions of the nine categories.
+        o The sentence describes data shared with third parties.
+    · Step 4: Determine that this sentence fits the Third Party Sharing/Collection category.
+
+Example Policy Segment 3: “If you wish to withdraw your consent at any time for any data processing we perform you can do so through our user settings page under privacy control.”
+
+    · Step 1: Read the sentence carefully.
+        o The sentence is about withdrawing consent for data processing.
+    · Step 2: Identify keywords such as "withdraw your consent" and "privacy control."
+        o Keywords identified: "withdraw your consent," "data processing," "user settings page," "privacy control."
+    · Step 3: Match these indicators with the descriptions of the nine categories.
+        o The sentence describes user control over data usage.
+    · Step 4: Determine that this sentence fits the User Choice/Control category.
+
+Example Policy Segment 4: “If you need to edit your information, you can do so by logging into your profile. For any modifications that are not available online, you may submit a request to our support team.”
+
+    · Step 1: Read the sentence carefully.
+        o The sentence is about editing personal information.
+    · Step 2: Identify keywords such as "edit your information" and "submit a request to our support team."
+        o Keywords identified: "edit your information," "logging into your profile," "submit a request," "support team."
+    · Step 3: Match these indicators with the descriptions of the nine categories.
+        o The sentence describes user access to data.
+    · Step 4: Determine that this sentence fits the User Access, Edit, and Deletion category.
+
+Example Policy Segment 5: “We keep your personal information, including sensitive personal information, as long as we need it to provide our products, comply with legal obligations, or protect our or others’ interests. We decide how long we need information on a case-by-case basis.”
+
+    · Step 1: Read the sentence carefully.
+        o The sentence is about the duration of keeping personal information.
+    · Step 2: Identify keywords such as "keep your personal information" and "case-by-case basis."
+        o Keywords identified: "keep your personal information," "sensitive personal information," "as long as we need it," "case-by-case basis."
+    · Step 3: Match these indicators with the descriptions of the nine categories.
+        o The sentence describes how long data is kept.
+    · Step 4: Determine that this sentence fits the Data Retention category.
+
+Example Policy Segment 6: “For safety, security, and fraud prevention, we process personal information such as personal details, payment details, profile information, usage information, advertising information.”
+
+    · Step 1: Read the sentence carefully.
+        o The sentence is about processing information for security reasons.
+    · Step 2: Identify keywords such as "safety, security, and fraud prevention" and "process personal information."
+        o Keywords identified: "safety," "security," "fraud prevention," "process personal information," "personal details," "payment details," "profile information," "usage information," "advertising information."
+    · Step 3: Match these indicators with the descriptions of the nine categories.
+        o The sentence describes measures taken to protect data.
+    · Step 4: Determine that this sentence fits the Data Security category.
+
+Example Policy Segment 7: “This privacy policy is subject to change from time to time. We will post revisions on our site and provide a policy update alert in our user interface.”
+
+    · Step 1: Read the sentence carefully.
+        o The sentence is about notifying users about policy changes.
+    · Step 2: Identify keywords such as "privacy policy is subject to change" and "policy update alert."
+        o Keywords identified: "privacy policy," "subject to change," "post revisions," "policy update alert," "user interface."
+    · Step 3: Match these indicators with the descriptions of the nine categories.
+        o The sentence describes how policy changes are communicated.
+    · Step 4: Determine that this sentence fits the Policy Change category.
+
+Example Policy Segment 8: “You have the right to opt out of Targeted Advertising or location tracking.”
+
+    · Step 1: Read the sentence carefully.
+        o The sentence is about opting out of tracking.
+    · Step 2: Identify keywords such as "opt out of Targeted Advertising" and "location tracking."
+        o Keywords identified: "right to opt out," "Targeted Advertising," "location tracking."
+    · Step 3: Match these indicators with the descriptions of the nine categories.
+        o The sentence describes user control over tracking.
+    · Step 4: Determine that this sentence fits the Do Not Track category.
+
+Example Policy Segment 9: “Parental consent is required before creating a kids profile on our platform, adhering to the Children's Online Privacy Protection Act (COPPA).”
+
+    · Step 1: Read the sentence carefully.
+        o The sentence is about obtaining parental consent for children’s data.
+    · Step 2: Identify keywords such as "Parental consent" and "Children's Online Privacy Protection Act."
+        o Keywords identified: "Parental consent," "kids profile," "Children's Online Privacy Protection Act," "COPPA."
+    · Step 3: Match these indicators with the descriptions of the nine categories.
+        o The sentence describes practices specific to children.
+    · Step 4: Determine that this sentence fits the International and Specific Audiences category.
+
+Now, you try. Please only respond with one of the nine categories for each sentence. Here is a sentence for you to classify:
 """
